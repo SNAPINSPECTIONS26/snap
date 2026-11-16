@@ -12,24 +12,31 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <title>FLAG</title>
 <style>
-:root { color-scheme: light dark; --bg: #eef2f1; --ink: #172227; --muted: #56666d; --line: #cfd8d8; --accent: #14233C; --surface: #fff; --err: #b4461d }
-@media (prefers-color-scheme: dark) { :root { --bg: #0e1416; --ink: #e3eaeb; --muted: #94a5ab; --line: #2a3a40; --accent: #63b5bb; --surface: #162024; --err: #f08b5c } }
+:root { color-scheme: light dark; --bg: #f2f2f7; --ink: #000; --muted: #6d6d72; --line: #c6c6c8; --accent: #007aff; --surface: #fff; --err: #ff3b30 }
+@media (prefers-color-scheme: dark) { :root { --bg: #000; --ink: #fff; --muted: #98989f; --line: #38383a; --accent: #0a84ff; --surface: #1c1c1e; --err: #ff453a } }
 * { box-sizing: border-box }
-body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--bg); color: var(--ink); font: 16px -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; padding: 16px }
-form { width: 100%; max-width: 360px; display: grid; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px }
-h1 { margin: 0; font-size: 26px; letter-spacing: .04em }
-input { width: 100%; font: inherit; font-size: 18px; padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink) }
-button { font: inherit; font-weight: 700; font-size: 17px; min-height: 54px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; cursor: pointer }
+body { margin: 0; min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; background: var(--bg); color: var(--ink); font: 17px -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; padding: max(24px, env(safe-area-inset-top)) 24px max(28px, env(safe-area-inset-bottom)) }
+form { width: 100%; max-width: 380px; min-height: calc(100dvh - 60px); display: grid; grid-template-rows: 1fr auto; gap: 24px }
+form[hidden] { display: none }
+.top { display: grid; justify-items: center; align-content: center; gap: 14px; text-align: center }
+.mk svg { width: 132px; height: 132px; border-radius: 30px; box-shadow: 0 12px 32px rgba(20,35,60,.28) }
+h1 { margin: 0; font-size: 56px; font-weight: 800; letter-spacing: .06em; line-height: 1 }
+.acro { font-size: 19px; color: var(--muted); line-height: 1.35 } .acro b { color: var(--accent); font-weight: 800; font-size: 21px }
+.bot { display: grid; gap: 12px }
+input { width: 100%; font: inherit; font-size: 18px; min-height: 54px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink) }
+button { font: inherit; font-weight: 700; font-size: 19px; min-height: 60px; border: 0; border-radius: 14px; background: var(--accent); color: #fff; cursor: pointer }
 button:disabled { opacity: .6 }
-p { margin: 0; color: var(--muted); font-size: 14px }
+input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,122,255,.25) }
+p { margin: 0; color: var(--muted); font-size: 15px; text-align: center }
 .err { color: var(--err); font-weight: 600 }
+#wait { font-size: 17px }
 </style>
 </head><body>
 <form id="f" hidden autocomplete="off">
-  <h1>FLAG</h1>
-  <input type="password" id="pw" placeholder="Passphrase" autocomplete="current-password" enterkeyhint="go">
+  <div class="top"><div class="mk"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><rect width="180" height="180" rx="36" fill="#14233C"/><rect x="44" y="32" width="12" height="118" rx="6" fill="#FFFFFF"/><path d="M56 40C84 28 108 54 142 40V100C108 114 84 88 56 100Z" fill="#FFC72C"/><g fill="#14233C"><rect x="78" y="62" width="10" height="22" rx="5"/><rect x="94" y="54" width="10" height="38" rx="5"/><rect x="110" y="62" width="10" height="22" rx="5"/></g></svg></div><h1>FLAG</h1><div class="acro"><span><b>F</b>ind</span> · <span><b>L</b>og</span> · <span><b>A</b>pprove</span> · <span><b>G</b>enerate</span></div></div>
+  <div class="bot"><input type="password" id="pw" placeholder="Passphrase" autocomplete="current-password" enterkeyhint="go">
   <button id="go" type="submit">Unlock</button>
-  <p id="msg"></p>
+  <p id="msg"></p></div>
 </form>
 <p id="wait">Opening…</p>
 <script>
