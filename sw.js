@@ -1,5 +1,5 @@
 // Keeps FLAG on the phone so it opens with no signal. Only sealed files are cached; nothing readable.
-const V = "snap-v24";
+const V = "snap-v25";
 const FILES = ["./", "index.html", "app.enc", "key.enc", "docx.umd.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png", "favicon.svg", "favicon.ico"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(V).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== V).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });

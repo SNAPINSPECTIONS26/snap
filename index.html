@@ -107,6 +107,7 @@ $("#f").addEventListener("submit", async (ev) => {
   try { priv = await unseal(pw); }
   catch (e) { $("#go").disabled = false; $("#go").textContent = "Unlock"; $("#msg").className = "err"; $("#msg").textContent = navigator.onLine === false && !(e instanceof DOMException) ? "Needs signal the first time." : "Wrong passphrase."; return; }
   try { await store.put("priv", priv); } catch (e) {}
+  try { sessionStorage.setItem("flag-firstunlock", "1"); } catch (e) {} // the app then offers Face ID
   try { await openApp(priv); }
   catch (e) { $("#go").disabled = false; $("#go").textContent = "Unlock"; $("#msg").className = "err"; $("#msg").textContent = "Couldn't open the app. Try again with signal."; }
 });
