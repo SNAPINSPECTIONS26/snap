@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FLAG">
+<meta name="theme-color" content="#14233C">
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
+<title>FLAG</title>
+<style>
+:root { color-scheme: light dark; --bg: #eef2f1; --ink: #172227; --muted: #56666d; --line: #cfd8d8; --accent: #14233C; --surface: #fff; --err: #b4461d }
+@media (prefers-color-scheme: dark) { :root { --bg: #0e1416; --ink: #e3eaeb; --muted: #94a5ab; --line: #2a3a40; --accent: #63b5bb; --surface: #162024; --err: #f08b5c } }
+* { box-sizing: border-box }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--bg); color: var(--ink); font: 16px -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; padding: 16px }
+form { width: 100%; max-width: 360px; display: grid; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px }
+h1 { margin: 0; font-size: 26px; letter-spacing: .04em }
+input { width: 100%; font: inherit; font-size: 18px; padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink) }
+button { font: inherit; font-weight: 700; font-size: 17px; min-height: 54px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; cursor: pointer }
+button:disabled { opacity: .6 }
+p { margin: 0; color: var(--muted); font-size: 14px }
+.err { color: var(--err); font-weight: 600 }
+</style>
+</head><body>
+<form id="f" hidden autocomplete="off">
+  <h1>FLAG</h1>
+  <input type="password" id="pw" placeholder="Passphrase" autocomplete="current-password" enterkeyhint="go">
+  <button id="go" type="submit">Unlock</button>
+  <p id="msg"></p>
+</form>
+<p id="wait">Opening…</p>
+<script>
+(() => {
+"use strict";
+const $ = (s) => document.querySelector(s);
+const ub = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+const store = (() => {
+  const open = () => new Promise((res, rej) => { const r = indexedDB.open("snap-lock", 1); r.onupgradeneeded = () => r.result.createObjectStore("k"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const run = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => { const t = db.transaction("k", mode); const q = fn(t.objectStore("k")); t.oncomplete = () => res(q.result); t.onerror = () => rej(t.error); }); };
+  return { get: (k) => run("readonly", (s) => s.get(k)), put: (k, v) => run("readwrite", (s) => s.put(v, k)) };
+})();
+if ("serviceWorker" in navigator && window.isSecureContext) navigator.serviceWorker.register("sw.js").catch(() => {});
+const getJSON = async (n) => { const r = await fetch(n, { cache: "no-cache" }); if (!r.ok) throw new Error(n); return r.json(); };
+async function unseal(pass) {
+  const k = (await getJSON("key.enc")).key;
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+  const wk = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: ub(k.salt), iterations: k.it, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+  const pk8 = await crypto.subtle.decrypt({ name: "AES-GCM", iv: ub(k.iv) }, wk, ub(k.ct));
+  return crypto.subtle.importKey("pkcs8", pk8, { name: "ECDH", namedCurve: "P-256" }, false, ["deriveKey"]); // can't be copied off the phone
+}
+async function openApp(priv) {
+  const e = await getJSON("app.enc");
+  const epub = await crypto.subtle.importKey("spki", ub(e.epub), { name: "ECDH", namedCurve: "P-256" }, false, []);
+  const key = await crypto.subtle.deriveKey({ name: "ECDH", public: epub }, priv, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+  const gz = await crypto.subtle.decrypt({ name: "AES-GCM", iv: ub(e.iv) }, key, ub(e.ct));
+  const text = await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+  const b = JSON.parse(text);
+  window.__SNAP_FILES = b.files;
+  document.open(); document.write(b.html); document.close();
+}
+async function start() {
+  let priv = null;
+  try { priv = await store.get("priv"); } catch (e) {}
+  if (priv) {
+    try { await openApp(priv); return; } catch (e) { $("#msg").textContent = "Couldn't open with the saved key. Enter your passphrase."; }
+  }
+  $("#wait").hidden = true; $("#f").hidden = false; $("#pw").focus();
+}
+$("#f").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const pw = $("#pw").value; if (!pw) return;
+  $("#go").disabled = true; $("#go").textContent = "Unlocking…"; $("#msg").textContent = ""; $("#msg").className = "";
+  let priv;
+  try { priv = await unseal(pw); }
+  catch (e) { $("#go").disabled = false; $("#go").textContent = "Unlock"; $("#msg").className = "err"; $("#msg").textContent = navigator.onLine === false && !(e instanceof DOMException) ? "Needs signal the first time." : "Wrong passphrase."; return; }
+  try { await store.put("priv", priv); } catch (e) {}
+  try { await openApp(priv); }
+  catch (e) { $("#go").disabled = false; $("#go").textContent = "Unlock"; $("#msg").className = "err"; $("#msg").textContent = "Couldn't open the app. Try again with signal."; }
+});
+start();
+})();
+</script>
+</body></html>
