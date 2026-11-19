@@ -1,0 +1,5 @@
+Photo Suggest files
+
+tf-core.min.js, tf-backend-cpu.min.js, tf-backend-webgl.min.js: TensorFlow.js 4.22.0, Copyright Google LLC, Apache License 2.0 (LICENSE-Apache-2.0.txt).
+net.json, net.bin: MobileNetV2 image reader (ImageNet weights from Keras Applications), Copyright Google LLC / The Keras Authors, Apache License 2.0, converted for this app (batch norm folded in, 16-bit weights).
+head.json, head.bin: problem-type weights learned from FLAG's own past reports. Numbers and TREC item/type ids only: no wording, photos, names or addresses.
